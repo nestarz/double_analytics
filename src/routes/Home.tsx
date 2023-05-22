@@ -6,7 +6,7 @@ const round = [fr, { maximumFractionDigits: 2 }];
 const noop = (v) => v;
 const max = (arr, fn) => Math.max(...arr.map(fn));
 const bff = (v) =>
-  ({ sessions: "Sessions", views: "Vues", count: "Clics", percent: "%" }[v] ??
+  ({ sessions: "Visits", views: "Views", count: "Total", percent: "%" }[v] ??
   v);
 const bffn = (key, v) =>
   (({ percent: (v) => v?.toLocaleString(...percent(1)) }[key] ?? noop)(v));
@@ -121,26 +121,26 @@ export default (req: Request, ctx) => {
           <div className="flex flex-col gap-4">
             <div className="flex gap-3 flex-wrap">
               {[
-                { key: "Pages vues", value: hits },
-                { key: "Sessions", value: sessions },
-                { key: "Visiteurs uniques", value: uniques },
+                { key: "Unique Visitors", value: uniques },
+                { key: "Total Visits", value: sessions },
+                { key: "Total PageViews", value: hits },
+                {
+                  key: "Views per Visit",
+                  value: (hits / (sessions ?? 1)).toFixed(1),
+                },
                 {
                   key: "Bounce rate",
                   value: (bounces / sessions)?.toLocaleString(...percent(1)),
                 },
                 {
-                  key: "Durée d'une session",
+                  key: "Visit Duration",
                   value:
                     (session_duration || 0)?.toLocaleString(...round) + "s",
                 },
                 {
-                  key: "Temps de chargement",
+                  key: "Loading Time",
                   value:
                     ((load_time || 0) * 1000)?.toLocaleString(...round) + "ms",
-                },
-                {
-                  key: "Pages vues par session",
-                  value: (hits / (sessions ?? 1)).toFixed(1),
                 },
               ].map(({ key, value }) => (
                 <div className="flex flex-col">
@@ -189,16 +189,16 @@ export default (req: Request, ctx) => {
             </table>
           </div>
           <div className="grid grid-cols-fill-96 gap-4">
-            <Table data={locations} title="Pages" />
-            <Table data={referrers} title="Sites référents" />
-            <Table data={cities} title="Pays" />
-            <Table data={countries} title="Pays" />
-            <Table data={devices} title="Appareils" />
-            <Table data={browsers} title="Navigateurs" />
+            <Table data={locations} title="Top Pages" />
+            <Table data={referrers} title="Top Sources" />
+            <Table data={cities} title="Cities" />
+            <Table data={countries} title="Countries" />
+            <Table data={devices} title="Devices" />
+            <Table data={browsers} title="Browsers" />
             <Table data={versions} title="Versions" />
             <Table data={screens} title="Screens" />
-            <Table data={external_links} title="Liens externes" />
-            <Table data={parameters} title="Paramètres" />
+            <Table data={external_links} title="External Links" />
+            <Table data={parameters} title="Parameters" />
           </div>
         </main>
         <footer className="fixed bottom-0 left-0 p-4 text-xs">
