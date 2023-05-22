@@ -1,5 +1,4 @@
 import pipe from "https://deno.land/x/pipe@0.3.0/mod.ts";
-import doctype from "https://deno.land/x/rotten@0.2.2/doctype.ts";
 import {
   collectAndCleanScripts,
   storeFunctionExecution,
@@ -90,9 +89,9 @@ SELECT
     'session_duration', (SELECT json_group_array(total_duration) FROM (SELECT session_id, SUM(visit_duration) as total_duration FROM visits2 GROUP BY session_id)),
     'visit_duration', (SELECT json_group_array(visit_duration) FROM visits2 WHERE visit_duration > 0),
     'load_time', (SELECT json_group_array(load_time) FROM visits2 WHERE load_time > 0),
-    'cities', (SELECT json_group_array(json_object('country_name', country_name, 'city', city, 'views', count)) FROM (SELECT json_extract(geo,'$.country_name') as country_name, json_extract(geo,'$.city') as city, COUNT(*) as count FROM visits2 GROUP BY country_name, city ORDER BY count DESC)),
-    'regions', (SELECT json_group_array(json_object('country_name', country_name, 'region_name', region_name, 'views', count)) FROM (SELECT json_extract(geo,'$.country_name') as country_name, json_extract(geo,'$.region_name') as region_name, COUNT(*) as count FROM visits2 GROUP BY country_name, region_name ORDER BY count DESC)),
-    'countries', (SELECT json_group_array(json_object('country_name', country_name, 'views', count)) FROM (SELECT json_extract(geo,'$.country_name') as country_name, COUNT(*) as count FROM visits2 GROUP BY country_name ORDER BY count DESC)),
+    'cities', (SELECT json_group_array(json_object('city_name', city_name, 'country_code', country_code, 'views', count)) FROM (SELECT country_code, city_name, COUNT(*) as count FROM visits2 GROUP BY country_code, city_name ORDER BY count DESC)),
+    'regions', (SELECT json_group_array(json_object('region_name', region_name, 'country_code', country_code, 'views', count)) FROM (SELECT country_code, region_name, COUNT(*) as count FROM visits2 GROUP BY country_code, region_name ORDER BY count DESC)),
+    'countries', (SELECT json_group_array(json_object('country_code', country_code, 'views', count)) FROM (SELECT country_code, COUNT(*) as count FROM visits2 GROUP BY country_code ORDER BY count DESC)),
     'screens', (SELECT json_group_array(json_object('width', screen_width, 'height', screen_height, 'views', count)) FROM (SELECT screen_width, screen_height, COUNT(*) as count FROM visits2 GROUP BY screen_width, screen_height ORDER BY count DESC)),
     'locations', (SELECT json_group_array(json_object('path', path, 'views', count)) FROM (SELECT path, COUNT(*) as count FROM visits2 GROUP BY path ORDER BY count DESC)),
     'devices', (SELECT json_group_array(json_object('device', device, 'views', count)) FROM (SELECT device, COUNT(*) as count FROM visits2 GROUP BY device ORDER BY count DESC)),
@@ -126,15 +125,20 @@ const onVisitFetchRequest = async (req: Request, ctx: HandlerContext) => {
   const ip =
     req.headers.get("x-forwarded-for")?.split(",").shift() ||
     (hostname ? hostname + ":" + port : null);
+  const geo = await fetch(new URL(ip, LOCATION_IP_API))
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(console.warn)
+    .then((v) => v ?? null);
   const payload = {
     ...json,
     session_id: new Date(getSessionId(ip)).getTime(),
     user_agent: req.headers.get("user-agent") ?? json.user_agent,
     ip,
-    geo: await fetch(new URL(ip, LOCATION_IP_API))
-      .then((r) => (r.ok ? r.json() : null))
-      .catch(console.warn)
-      .then((v) => v ?? null),
+    latitude: geo?.latitude,
+    longitude: geo?.longitude,
+    country_code: geo?.country_code,
+    region_name: geo?.region_name,
+    city_name: geo?.city,
   };
   const keys = Object.keys(payload).map(columnSafe);
   const columns = keys.map((v) => `"${v}"`).join(", ");
@@ -206,13 +210,17 @@ export default async (prefix: string, db: DB): Promise<Routes> => {
       user_agent TEXT,
       hostname TEXT,
       href TEXT,
-      geo TEXT,
+      latitude REAL,
+      longitude REAL,
+      country_code TEXT,
+      region_name TEXT,
+      city_name TEXT,
       parameters TEXT,
       screen_width INTEGER,
       screen_height INTEGER,
       load_time REAL,
       visit_duration REAL,
-      path TEXT,
+      "path" TEXT,
       session_id INTEGER,
       ignore INTEGER
     ) STRICT;
@@ -245,13 +253,14 @@ export default async (prefix: string, db: DB): Promise<Routes> => {
       (vn) =>
         new ReadableStream({
           start(controller) {
-            controller.enqueue(new TextEncoder().encode(render(vn)));
+            controller.enqueue(
+              new TextEncoder().encode("<!DOCTYPE html>".concat(render(vn)))
+            );
             controller.close();
           },
         }),
       (stream: ReadableStream) =>
         stream.pipeThrough(new TwindStream(twind(twindOptions, virtual(true)))),
-      doctype(["html"]),
       (body) => new Response(body, { headers: { "content-type": "text/html" } })
     );
 
