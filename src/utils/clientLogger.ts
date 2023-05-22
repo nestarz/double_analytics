@@ -8,7 +8,7 @@ export default (endpoint: string | URL) => {
   if (typeof newIgnore === "string")
     localStorage.setItem(IGNORE_KEY, newIgnore !== "false");
   const ignore = localStorage.getItem(IGNORE_KEY) === "true";
-  if (ignore) console.warn("[analytics] ignored mode activated");
+  if (ignore) console.warn("[double_analytics] ignored mode activated");
   const post = (e, v) => fetch(e, { method: "POST", body: JSON.stringify(v) });
   const beacon = (e, v) =>
     navigator.sendBeacon(
@@ -23,7 +23,6 @@ export default (endpoint: string | URL) => {
     id,
     ignore,
     hostname: window.location.hostname,
-    href: window.location.href,
     path: window.location.pathname,
     referrer: document.referrer,
     user_agent: navigator.userAgent,
@@ -39,7 +38,7 @@ export default (endpoint: string | URL) => {
       value,
     });
   document.addEventListener("click", (e) => {
-    const { host, href, target } = e.target.closest("a") || {};
+    const { host, href, target } = (e.target as HTMLElement).closest("a") || {};
     if (host && target === "_blank" && host !== window.location.host)
       logEvent("CLICK", "EXTERNAL_LINK", {
         href: href,

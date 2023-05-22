@@ -34,15 +34,6 @@ const createGetSessionId = (activeSessions: ActiveSessions = {}) => {
 const getSessionId = createGetSessionId();
 const columnSafe = (k: string) => k.replace(/[^a-zA-Z0-9_]/g, "");
 
-const calcMedian = (raw: number[]): number => {
-  const arr = raw.filter((d) => d > 0);
-  const mid = Math.floor(arr.length / 2);
-  const sortedArr = [...arr].sort((a, b) => a - b);
-  return arr.length % 2 !== 0
-    ? sortedArr[mid]
-    : (sortedArr[mid - 1] + sortedArr[mid]) / 2;
-};
-
 const onAnalyzeFetchRequest = async (req: Request, ctx) => {
   const res = await ctx.db.query(sql`
 WITH
@@ -86,9 +77,9 @@ SELECT
     'sessions', (SELECT "sessions" FROM "sessions"),
     'bounces', (SELECT bounces FROM bounces),
     'daily', (SELECT json_group_array(json_object('date', date, 'count', count)) FROM (SELECT DATE(id/1000, 'unixepoch') as date, COUNT(*) as count FROM visits2 GROUP BY date ORDER BY date)),
-    'session_duration', (SELECT json_group_array(total_duration) FROM (SELECT session_id, SUM(visit_duration) as total_duration FROM visits2 GROUP BY session_id)),
-    'visit_duration', (SELECT json_group_array(visit_duration) FROM visits2 WHERE visit_duration > 0),
-    'load_time', (SELECT json_group_array(load_time) FROM visits2 WHERE load_time > 0),
+    'session_duration', (SELECT avg(total_duration) FROM (SELECT session_id, SUM(visit_duration) as total_duration FROM visits2 GROUP BY session_id)),
+    'visit_duration', (SELECT avg(visit_duration) FROM visits2 WHERE visit_duration > 0),
+    'load_time', (SELECT avg(load_time) FROM visits2 WHERE load_time > 0),
     'cities', (SELECT json_group_array(json_object('city_name', city_name, 'country_code', country_code, 'views', count)) FROM (SELECT country_code, city_name, COUNT(*) as count FROM visits2 GROUP BY country_code, city_name ORDER BY count DESC)),
     'regions', (SELECT json_group_array(json_object('region_name', region_name, 'country_code', country_code, 'views', count)) FROM (SELECT country_code, region_name, COUNT(*) as count FROM visits2 GROUP BY country_code, region_name ORDER BY count DESC)),
     'countries', (SELECT json_group_array(json_object('country_code', country_code, 'views', count)) FROM (SELECT country_code, COUNT(*) as count FROM visits2 GROUP BY country_code ORDER BY count DESC)),
@@ -97,20 +88,13 @@ SELECT
     'devices', (SELECT json_group_array(json_object('device', device, 'views', count)) FROM (SELECT device, COUNT(*) as count FROM visits2 GROUP BY device ORDER BY count DESC)),
     'browsers', (SELECT json_group_array(json_object('browser', browser, 'views', count)) FROM (SELECT browser, COUNT(*) as count FROM visits2 GROUP BY browser ORDER BY count DESC)),
     'versions', (SELECT json_group_array(json_object('version', "version", 'views', count)) FROM (SELECT "version", COUNT(*) as count FROM visits2 GROUP BY "version" ORDER BY count DESC)),
-    'parameters', (SELECT json_group_array(json_object('key', key, 'value', value, 'views', count)) FROM (SELECT key, value, COUNT(*) as count FROM (SELECT json_each.key as key, json_each.value as value FROM visits2, json_each(visits2.parameters)) GROUP BY key, value ORDER BY count DESC)),
+    'parameters', (SELECT json_group_array(json_object('key', key, 'value', value, 'views', count)) FROM (SELECT key, value, COUNT(*) as count FROM (SELECT json_each.key as key, json_each.value as value FROM visits2, json_each(visits2.parameters) WHERE key != 'fbclid') GROUP BY key, value ORDER BY count DESC)),
     'referrers', (SELECT json_group_array(json_object('referrer', referrer, 'views', count)) FROM (SELECT referrer, COUNT(*) as count FROM visits2 WHERE ref_hostname != hostname AND LENGTH(referrer) > 0 GROUP BY referrer ORDER BY count DESC)),
     'external_links', (SELECT json_group_array(json_object('href', href, 'count', count)) FROM (SELECT json_extract("value",'$.href') as href, COUNT(*) as count FROM analytics_events WHERE "action" = 'CLICK' AND category = 'EXTERNAL_LINK' GROUP BY href ORDER BY count DESC))
   ) as result
 FROM hits, uniques, "sessions", bounces;
 `);
-  const results = res
-    .map(({ result }) => JSON.parse(result))
-    .map((res) => ({
-      ...res,
-      session_duration: calcMedian(res.session_duration),
-      visit_duration: calcMedian(res.visit_duration),
-      load_time: calcMedian(res.load_time),
-    }));
+  const results = res.map(({ result }) => JSON.parse(result));
   return /html/g.test(req.headers.get("accept") ?? "")
     ? ctx.rotten(Home)(req, { ...ctx, data: results })
     : new Response(JSON.stringify(results), {
@@ -209,7 +193,6 @@ export default async (prefix: string, db: DB): Promise<Routes> => {
       ip TEXT,
       user_agent TEXT,
       hostname TEXT,
-      href TEXT,
       latitude REAL,
       longitude REAL,
       country_code TEXT,
