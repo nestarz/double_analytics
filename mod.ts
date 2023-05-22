@@ -9,7 +9,7 @@ import TwindStream from "https://esm.sh/@twind/with-react@1.1.3/readableStream.j
 import sql from "https://esm.sh/noop-tag@2.0.0";
 import { twind, virtual } from "https://esm.sh/v103/@twind/core@1.1.2";
 
-import * as App from "./src/routes/App.tsx";
+import * as Home from "./src/routes/Home.tsx";
 import client from "./src/utils/clientLogger.ts";
 import { twindOptions } from "./twind.ts";
 
@@ -113,7 +113,7 @@ FROM hits, uniques, "sessions", bounces;
       load_time: calcMedian(res.load_time),
     }));
   return /html/g.test(req.headers.get("accept") ?? "")
-    ? ctx.rotten(App)(req, { ...ctx, data: results })
+    ? ctx.rotten(Home)(req, { ...ctx, data: results })
     : new Response(JSON.stringify(results), {
         headers: { "content-type": "application/json" },
       });
