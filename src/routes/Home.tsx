@@ -29,7 +29,7 @@ const Row = ({
             className={
               (head
                 ? "w-1/2 px-4 py-2 text-stone-900 text-left"
-                : "px-4 py-2 text-stone-500") +
+                : "px-4 py-2 text-stone-500 truncate max-w-xs") +
               (i === 0 ? " font-semibold" : "")
             }
           >
@@ -113,7 +113,7 @@ export default (req: Request, ctx) => {
         />
       </head>
       <body>
-        <main className="p-4 flex flex-col gap-4">
+        <main className="p-4 flex flex-col gap-4 mb-4">
           <div className="flex gap-1 items-baseline">
             <span>{new URL(req.url).hostname}</span>
             <span className="text-xs">Analytics</span>
