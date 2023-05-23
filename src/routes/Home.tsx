@@ -1,4 +1,4 @@
-import { h, Fragment } from "https://esm.sh/preact@10.14.1";
+import { h, Fragment } from "https://esm.sh/preact@10.15.0";
 
 const fr = "fr-FR";
 const percent = (v) => [fr, { style: "percent", maximumFractionDigits: v }];
