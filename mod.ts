@@ -3,7 +3,7 @@ import {
   collectAndCleanScripts,
   storeFunctionExecution,
 } from "https://deno.land/x/scripted@0.0.2/mod.ts";
-import { render } from "https://esm.sh/preact-render-to-string@5.2.0&deps=preact@10.15.0";
+import { render } from "https://esm.sh/preact-render-to-string@6.0.3&deps=preact@10.15.0";
 import TwindStream from "https://esm.sh/@twind/with-react@1.1.3/readableStream.js";
 import sql from "https://esm.sh/noop-tag@2.0.0";
 import { twind, virtual } from "https://esm.sh/@twind/core@1.1.3";
