@@ -1,11 +1,11 @@
-/** @jsxImportSource https://esm.sh/preact@10.15.0 */
+/** @jsxImportSource https://esm.sh/preact@10.17.1 */
 import type {
   Handlers,
   PageProps,
 } from "https://deno.land/x/fresh@1.4.2/server.ts";
 import type { ContextState } from "../../mod.ts";
 
-import { h, Fragment } from "https://esm.sh/preact@10.15.0";
+import { Fragment } from "https://esm.sh/preact@10.17.1";
 import sql from "https://esm.sh/noop-tag@2.0.0";
 
 const fr = "fr-FR";
@@ -148,15 +148,15 @@ FROM hits, uniques, "sessions", bounces;
 `);
     const results = res?.map(({ result }) => JSON.parse(result));
     return /html/g.test(req.headers.get("accept") ?? "")
-      ? ctx.render(results)
+      ? ctx.render(results?.[0])
       : new Response(JSON.stringify(results), {
           headers: { "content-type": "application/json" },
         });
   },
 };
 
-export default ({ data, url }: PageProps<any>) => {
-  const {
+export default ({
+  data: {
     external_links,
     hits,
     sessions,
@@ -174,8 +174,9 @@ export default ({ data, url }: PageProps<any>) => {
     load_time,
     screens,
     daily,
-  } = data;
-
+  } = {},
+  url,
+}: PageProps<any>) => {
   return (
     <html>
       <head>
