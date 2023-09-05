@@ -41,7 +41,10 @@ export interface ContextState {
 export interface AnalyticsOptions {
   prefix: string;
   database: DB;
-  middleware?:
+  apiMiddleware?:
+    | Parameters<typeof middleware>[0]
+    | Parameters<typeof middleware>[0][];
+  frontMiddleware?:
     | Parameters<typeof middleware>[0]
     | Parameters<typeof middleware>[0][];
 }
@@ -51,7 +54,8 @@ const join = (...str: string[]) => str.join("/").replace(/\/\//g, "/");
 export default async ({
   database: db,
   prefix,
-  middleware: middlewareFns,
+  apiMiddleware,
+  frontMiddleware,
 }: AnalyticsOptions): Promise<Routes> => {
   await createRequiredTables(db);
   const renderPipe = createRenderPipe(
@@ -66,13 +70,10 @@ export default async ({
       )
   );
 
-  const withMiddlewares = (handler) =>
+  const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+  const withMiddlewares = (handler, isApi = false) =>
     middleware(
-      ...(Array.isArray(middlewareFns)
-        ? middlewareFns
-        : middlewareFns
-        ? [middlewareFns]
-        : []),
+      ...toArray(isApi ? apiMiddleware : frontMiddleware),
       async (_, ctx) => {
         ctx.state.db = db;
         ctx.state.prefix = prefix;
