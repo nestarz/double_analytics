@@ -18,6 +18,7 @@ import twindConfig from "./twind.config.ts";
 import createRequiredTables from "./src/utils/createRequiredTables.ts";
 
 import * as Home from "./src/routes/Home.tsx";
+import * as ApiClientFile from "./src/routes/api/clientFile.ts";
 import * as ApiLogEvent from "./src/routes/api/logEvent.ts";
 import * as ApiLogVisit from "./src/routes/api/logVisit.ts";
 import * as ApiLogExit from "./src/routes/api/logExit.ts";
@@ -72,10 +73,11 @@ export default async ({
         : middlewareFns
         ? [middlewareFns]
         : []),
-      (_, ctx) => {
+      async (_, ctx) => {
         ctx.state.db = db;
         ctx.state.prefix = prefix;
-        return ctx.next();
+        const r = await ctx.next().catch(console.error);
+        return r;
       },
       handler
     );

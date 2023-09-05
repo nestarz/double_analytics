@@ -22,7 +22,7 @@ const createGetSessionId = (activeSessions: ActiveSessions = {}) => {
 const getSessionId = createGetSessionId();
 
 export const handler: Handlers<unknown, ContextState> = {
-  GET: async (req: Request, ctx) => {
+  POST: async (req: Request, ctx) => {
     const LOCATION_IP_API = `https://freegeoip.app/json/`;
     const json = await req.json();
     const { hostname, port } = ctx?.remoteAddr ?? {};
