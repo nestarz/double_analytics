@@ -71,9 +71,9 @@ export default async ({
   );
 
   const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
-  const withMiddlewares = (handler, isApi = false) =>
+  const withMiddlewares = (handler, isFront = false) =>
     middleware(
-      ...toArray(isApi ? apiMiddleware : frontMiddleware),
+      ...toArray(isFront ? frontMiddleware : apiMiddleware),
       async (_, ctx) => {
         ctx.state.db = db;
         ctx.state.prefix = prefix;
@@ -95,7 +95,7 @@ export default async ({
       baseUrl: import.meta.url,
       prefix,
     }),
-    [Home.config.routeOverride!]: withMiddlewares(renderPipe(Home)),
+    [Home.config.routeOverride!]: withMiddlewares(renderPipe(Home), true),
     [ApiLogEvent.config.routeOverride!]: withMiddlewares(
       renderPipe(ApiLogEvent)
     ),
