@@ -1,8 +1,23 @@
-export default (endpoint: string | URL) => {
+import type {
+  Handlers,
+  RouteConfig,
+} from "https://deno.land/x/fresh@1.4.2/server.ts";
+import type { ContextState } from "../../../mod.ts";
+
+import {
+  collectAndCleanScripts,
+  storeFunctionExecution,
+} from "https://deno.land/x/scripted@0.0.3/mod.ts";
+
+export const config: RouteConfig = {
+  routeOverride: "/client.js",
+};
+
+const clientScript = (endpoint: string | URL) => {
   console.time("[double_analytics]");
-  const VISIT = new URL("?visit", endpoint);
-  const QUIT = new URL("?quit", endpoint);
-  const EVENT = new URL("?event", endpoint);
+  const VISIT = new URL("./api/log/visit", endpoint);
+  const QUIT = new URL("./api/log/exit", endpoint);
+  const EVENT = new URL("./api/log/event", endpoint);
   const IGNORE_KEY = "analytics:ignore";
   const newIgnore = new URL(document.location).searchParams.get(IGNORE_KEY);
   if (typeof newIgnore === "string")
@@ -58,4 +73,17 @@ export default (endpoint: string | URL) => {
     }
   });
   console.timeEnd("[double_analytics]");
+};
+
+const join = (...str: string[]) => str.join("/").replace(/\/\//g, "/");
+
+export const handler: Handlers<unknown, ContextState> = {
+  GET: (req: Request, ctx) => {
+    const url = new URL(join(".", ctx.state.prefix), req.url);
+    storeFunctionExecution(clientScript, url.href);
+
+    return new Response(collectAndCleanScripts(), {
+      headers: { "content-type": "application/javascript" },
+    });
+  },
 };

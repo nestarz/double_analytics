@@ -1,7 +1,11 @@
-import type { Handlers } from "https://deno.land/x/fresh@1.4.2/server.ts";
+import type { Handlers, RouteConfig } from "https://deno.land/x/fresh@1.4.2/server.ts";
 import type { ContextState } from "../../../mod.ts";
 
 import columnSafe from "../../utils/columnSafe.ts";
+
+export const config: RouteConfig = {
+  routeOverride: "/api/log/visit{/}?",
+};
 
 type ActiveSessions = { [ip: string]: number };
 

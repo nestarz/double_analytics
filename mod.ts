@@ -1,3 +1,4 @@
+import type { Routes } from "https://deno.land/x/rutt@0.2.0/mod.ts";
 import type {
   QueryParameterSet,
   RowObject,
@@ -12,18 +13,16 @@ import TwindStream from "https://esm.sh/@twind/with-react@1.1.3/readableStream.j
 import { render as renderToString } from "https://esm.sh/preact-render-to-string@6.2.1&deps=preact@10.17.1&target=es2022";
 import prepass from "https://esm.sh/preact-ssr-prepass@1.2.0?target=es2022&external=preact";
 import toReadableStream from "https://esm.sh/to-readable-stream@4.0.0";
-import {
-  collectAndCleanScripts,
-  storeFunctionExecution,
-} from "https://deno.land/x/scripted@0.0.3/mod.ts";
 
-import client from "./src/utils/clientLogger.ts";
-import * as Home from "./src/routes/Home.tsx";
 import twindConfig from "./twind.config.ts";
+import createRequiredTables from "./src/utils/createRequiredTables.ts";
+
+import * as Home from "./src/routes/Home.tsx";
+import * as ApiLogEvent from "./src/routes/api/logEvent.ts";
+import * as ApiLogVisit from "./src/routes/api/logVisit.ts";
+import * as ApiLogExit from "./src/routes/api/logExit.ts";
 
 export type { S3Client } from "https://deno.land/x/s3_lite_client@0.6.1/mod.ts";
-import type { Routes } from "https://deno.land/x/rutt@0.2.0/mod.ts";
-import createRequiredTables from "./src/utils/createRequiredTables.ts";
 export type { Routes } from "https://deno.land/x/rutt@0.2.0/mod.ts";
 
 export interface DB {
@@ -35,6 +34,7 @@ export interface DB {
 
 export interface ContextState {
   db: DB;
+  prefix: string;
 }
 
 export interface AnalyticsOptions {
@@ -44,6 +44,8 @@ export interface AnalyticsOptions {
     | Parameters<typeof middleware>[0]
     | Parameters<typeof middleware>[0][];
 }
+
+const join = (...str: string[]) => str.join("/").replace(/\/\//g, "/");
 
 export default async ({
   database: db,
@@ -72,6 +74,7 @@ export default async ({
         : []),
       (_, ctx) => {
         ctx.state.db = db;
+        ctx.state.prefix = prefix;
         return ctx.next();
       },
       handler
@@ -82,20 +85,23 @@ export default async ({
       key: "@bureaudouble/double_analytics",
       jsxImportSource: "preact",
       baseUrl: new URL(import.meta.url),
-      prefix: `${prefix}/islands/`,
+      prefix: join(prefix, "/islands/"),
       importMapFileName: "import_map.json",
     }),
     [staticFileRoute.config.routeOverride!]: staticFileRoute.createHandler({
       baseUrl: import.meta.url,
       prefix,
     }),
-    "GET@/client.js": (req: Request) => {
-      storeFunctionExecution(client, new URL(prefix, req.url));
-
-      return new Response(collectAndCleanScripts(), {
-        headers: { "content-type": "application/javascript" },
-      });
-    },
-    "GET@/*": withMiddlewares(renderPipe(Home)),
+    [Home.config.routeOverride!]: withMiddlewares(renderPipe(Home)),
+    [ApiLogEvent.config.routeOverride!]: withMiddlewares(
+      renderPipe(ApiLogEvent)
+    ),
+    [ApiLogExit.config.routeOverride!]: withMiddlewares(renderPipe(ApiLogExit)),
+    [ApiLogVisit.config.routeOverride!]: withMiddlewares(
+      renderPipe(ApiLogVisit)
+    ),
+    [ApiClientFile.config.routeOverride!]: withMiddlewares(
+      renderPipe(ApiClientFile)
+    ),
   };
 };

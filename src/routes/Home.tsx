@@ -2,6 +2,7 @@
 import type {
   Handlers,
   PageProps,
+  RouteConfig,
 } from "https://deno.land/x/fresh@1.4.2/server.ts";
 import type { ContextState } from "../../mod.ts";
 
@@ -84,6 +85,10 @@ const Table = ({ title, data }) =>
       )}
     </section>
   );
+
+export const config: RouteConfig = {
+  routeOverride: "/",
+};
 
 export const handler: Handlers<unknown, ContextState> = {
   GET: async (req: Request, ctx) => {
