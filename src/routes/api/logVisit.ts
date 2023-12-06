@@ -39,9 +39,8 @@ export const createApiLogVisitPlugin: (
       const json = await req.json();
       const { hostname, port } = ctx?.remoteAddr ?? {};
       const ip = req.headers.get("x-forwarded-for")?.split(",").shift() ||
-        (hostname ? hostname + ":" + port : null);
+        hostname;
       const geo = ip ? await getIpData?.(ip) : null;
-      console.log(ctx.remoteAddr, ip, geo);
       const payload = {
         ...json,
         session_id: new Date(ip ? getSessionId(ip) : new Date()).getTime(),
