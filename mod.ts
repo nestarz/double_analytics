@@ -73,6 +73,7 @@ export default async ({
     middleware(
       ...toArray(isFront ? frontMiddleware : apiMiddleware),
       async (_, ctx) => {
+        console.log(ctx.remoteAddr);
         ctx.state.db = db;
         ctx.state.prefix = prefix;
         const r = await ctx.next().catch(console.error);
