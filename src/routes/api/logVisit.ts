@@ -37,7 +37,7 @@ export const createApiLogVisitPlugin: (
   handler: {
     POST: async (req: Request, ctx) => {
       const json = await req.json();
-      const { hostname, port } = ctx?.remoteAddr ?? {};
+      const { hostname } = ctx?.remoteAddr ?? {};
       const ip = req.headers.get("x-forwarded-for")?.split(",").shift() ||
         hostname;
       const geo = ip ? await getIpData?.(ip) : null;
