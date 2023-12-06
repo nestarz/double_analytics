@@ -1,35 +1,33 @@
+import createRequiredTables from "./src/utils/createRequiredTables.ts";
+import * as ApiClientFile from "./src/routes/api/clientFile.ts";
+import * as ApiLogEvent from "./src/routes/api/logEvent.ts";
+import * as ApiLogVisit from "./src/routes/api/logVisit.ts";
+import * as ApiLogExit from "./src/routes/api/logExit.ts";
+import * as Home from "./src/routes/Home.tsx";
+import twindConfig from "./twind.config.ts";
 import type { Routes } from "https://deno.land/x/rutt@0.2.0/mod.ts";
 import type {
   QueryParameterSet,
   RowObject,
-} from "https://deno.land/x/sqlite@v3.7.2/mod.ts";
+} from "https://deno.land/x/sqlite@v3.8/mod.ts";
 
-import * as Islands from "https://deno.land/x/islet@0.0.14/server.ts";
-import createRenderPipe from "https://deno.land/x/outils@0.0.48/createRenderPipe.ts";
-import middleware from "https://deno.land/x/outils@0.0.48/fresh/middleware.ts";
-import * as staticFileRoute from "https://deno.land/x/outils@0.0.48/staticFileRoute.ts";
+import * as Islands from "https://deno.land/x/islet@0.0.60/server.ts";
+import createRenderPipe from "https://deno.land/x/outils@0.0.206/createRenderPipe.ts";
+import middleware from "https://deno.land/x/outils@0.0.206/fresh/middleware.ts";
+import * as staticFileRoute from "https://deno.land/x/outils@0.0.206/staticFileRoute.ts";
 import { twind, virtual } from "https://esm.sh/@twind/core@1.1.3";
 import TwindStream from "https://esm.sh/@twind/with-react@1.1.3/readableStream.js";
 import { render as renderToString } from "https://esm.sh/preact-render-to-string@6.2.1&deps=preact@10.17.1&target=es2022";
 import prepass from "https://esm.sh/preact-ssr-prepass@1.2.0?target=es2022&external=preact";
 import toReadableStream from "https://esm.sh/to-readable-stream@4.0.0";
 
-import twindConfig from "./twind.config.ts";
-import createRequiredTables from "./src/utils/createRequiredTables.ts";
-
-import * as Home from "./src/routes/Home.tsx";
-import * as ApiClientFile from "./src/routes/api/clientFile.ts";
-import * as ApiLogEvent from "./src/routes/api/logEvent.ts";
-import * as ApiLogVisit from "./src/routes/api/logVisit.ts";
-import * as ApiLogExit from "./src/routes/api/logExit.ts";
-
-export type { S3Client } from "https://deno.land/x/s3_lite_client@0.6.1/mod.ts";
+export type { S3Client } from "https://deno.land/x/s3_lite_client@0.6.2/mod.ts";
 export type { Routes } from "https://deno.land/x/rutt@0.2.0/mod.ts";
 
 export interface DB {
   query: (
     query: string,
-    values?: QueryParameterSet
+    values?: QueryParameterSet,
   ) => Promise<RowObject[] | undefined>;
 }
 
@@ -58,15 +56,17 @@ export default async ({
   frontMiddleware,
 }: AnalyticsOptions): Promise<Routes> => {
   await createRequiredTables(db);
-  const renderPipe = createRenderPipe(
-    async (vn) => (await prepass(vn), vn),
-    (vn) => "<!DOCTYPE html>".concat(renderToString(vn)),
-    (str: string) => new TextEncoder().encode(str),
-    toReadableStream,
-    Islands.addScripts,
-    (stream: ReadableStream) =>
-      stream.pipeThrough(
-        new TwindStream(twind(twindConfig(prefix), virtual(true)))
+  const renderPipe = createRenderPipe((vn) =>
+    prepass(vn)
+      .then(() => vn)
+      .then((vn) => "<!DOCTYPE html>".concat(renderToString(vn)))
+      .then((v) => new TextEncoder().encode(v))
+      .then(toReadableStream)
+      .then(Islands.addScripts)
+      .then((stream) =>
+        (stream as ReadableStream).pipeThrough(
+          new TwindStream(twind(twindConfig(prefix), virtual(true))),
+        )
       )
   );
 
@@ -80,7 +80,7 @@ export default async ({
         const r = await ctx.next().catch(console.error);
         return r;
       },
-      handler
+      handler,
     );
 
   return {
@@ -97,14 +97,14 @@ export default async ({
     }),
     [Home.config.routeOverride!]: withMiddlewares(renderPipe(Home), true),
     [ApiLogEvent.config.routeOverride!]: withMiddlewares(
-      renderPipe(ApiLogEvent)
+      renderPipe(ApiLogEvent),
     ),
     [ApiLogExit.config.routeOverride!]: withMiddlewares(renderPipe(ApiLogExit)),
     [ApiLogVisit.config.routeOverride!]: withMiddlewares(
-      renderPipe(ApiLogVisit)
+      renderPipe(ApiLogVisit),
     ),
     [ApiClientFile.config.routeOverride!]: withMiddlewares(
-      renderPipe(ApiClientFile)
+      renderPipe(ApiClientFile),
     ),
   };
 };

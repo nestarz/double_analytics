@@ -1,7 +1,7 @@
 import type {
   Handlers,
   RouteConfig,
-} from "https://deno.land/x/fresh@1.4.2/server.ts";
+} from "https://deno.land/x/fresh@1.6.0/server.ts";
 import type { ContextState } from "../../../mod.ts";
 
 import {
