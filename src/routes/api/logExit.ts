@@ -7,7 +7,7 @@ export const config: RouteConfig = {
 };
 
 export const handler: Handlers<unknown, ContextState> = {
-  GET: async (req: Request, ctx) => {
+  POST: async (req: Request, ctx) => {
     const { id, ...payload } = await req.json();
     const upCols = (v: string) => ["load_time", "visit_duration"].includes(v);
     const keys = Object.keys(payload).map(columnSafe).filter(upCols);

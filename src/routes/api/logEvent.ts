@@ -10,7 +10,7 @@ export const config: RouteConfig = {
 };
 
 export const handler: Handlers<unknown, ContextState> = {
-  GET: async (req: Request, ctx) => {
+  POST: async (req: Request, ctx) => {
     const payload = await req.json();
     const keys = Object.keys(payload).map(columnSafe);
     const columns = keys.map((v) => `"${v}"`).join(", ");
