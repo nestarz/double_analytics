@@ -3,7 +3,7 @@ import type { ContextState } from "../../../mod.ts";
 import columnSafe from "../../utils/columnSafe.ts";
 
 export const config: RouteConfig = {
-  routeOverride: "/api/log/quit{/}?",
+  routeOverride: "/api/log/exit{/}?",
 };
 
 export const handler: Handlers<unknown, ContextState> = {
