@@ -11,7 +11,6 @@ import type {
   RowObject,
 } from "https://deno.land/x/sqlite@v3.8/mod.ts";
 
-import * as Islands from "https://deno.land/x/islet@0.0.60/server.ts";
 import createRenderPipe from "https://deno.land/x/outils@0.0.206/createRenderPipe.ts";
 import middleware from "https://deno.land/x/outils@0.0.206/fresh/middleware.ts";
 import * as staticFileRoute from "https://deno.land/x/outils@0.0.206/staticFileRoute.ts";
@@ -62,7 +61,6 @@ export default async ({
       .then((vn) => "<!DOCTYPE html>".concat(renderToString(vn)))
       .then((v) => new TextEncoder().encode(v))
       .then(toReadableStream)
-      .then(Islands.addScripts)
       .then((stream) =>
         (stream as ReadableStream).pipeThrough(
           new TwindStream(twind(twindConfig(prefix), virtual(true))),
@@ -84,13 +82,6 @@ export default async ({
     );
 
   return {
-    [Islands.config.routeOverride]: Islands.createHandler({
-      key: "@bureaudouble/double_analytics",
-      jsxImportSource: "preact",
-      baseUrl: new URL(import.meta.url),
-      prefix: join(prefix, "/islands/"),
-      importMapFileName: "import_map.json",
-    }),
     [staticFileRoute.config.routeOverride!]: staticFileRoute.createHandler({
       baseUrl: import.meta.url,
       prefix,

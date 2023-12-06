@@ -1,4 +1,7 @@
-import type { Handlers, RouteConfig } from "https://deno.land/x/fresh@1.6.0/server.ts";
+import type {
+  Handlers,
+  RouteConfig,
+} from "https://deno.land/x/fresh@1.6.0/server.ts";
 import type { ContextState } from "../../../mod.ts";
 
 import columnSafe from "../../utils/columnSafe.ts";
@@ -12,8 +15,9 @@ type ActiveSessions = { [ip: string]: number };
 const createGetSessionId = (activeSessions: ActiveSessions = {}) => {
   const getSessionId = (ip: string): number => {
     const halfHourAgo = Date.now() + 1000 * 60 * 60 * -0.5;
-    if (!activeSessions[ip] || activeSessions[ip] < halfHourAgo)
+    if (!activeSessions[ip] || activeSessions[ip] < halfHourAgo) {
       activeSessions[ip] = new Date().getTime();
+    }
     return activeSessions[ip];
   };
   return getSessionId;
