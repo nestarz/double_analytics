@@ -1,10 +1,11 @@
 import createRequiredTables from "./src/utils/createRequiredTables.ts";
+import createApiLogVisitPlugin from "./src/routes/api/logVisit.ts";
 import * as ApiClientFile from "./src/routes/api/clientFile.ts";
 import * as ApiLogEvent from "./src/routes/api/logEvent.ts";
-import * as ApiLogVisit from "./src/routes/api/logVisit.ts";
 import * as ApiLogExit from "./src/routes/api/logExit.ts";
 import * as Home from "./src/routes/Home.tsx";
 import twindConfig from "./twind.config.ts";
+import type { GetIpData } from "./src/routes/api/logVisit.ts";
 import type { Routes } from "https://deno.land/x/rutt@0.2.0/mod.ts";
 import type {
   QueryParameterSet,
@@ -38,6 +39,7 @@ export interface ContextState {
 export interface AnalyticsOptions {
   prefix: string;
   database: DB;
+  getIpData?: GetIpData;
   apiMiddleware?:
     | Parameters<typeof middleware>[0]
     | Parameters<typeof middleware>[0][];
@@ -46,15 +48,15 @@ export interface AnalyticsOptions {
     | Parameters<typeof middleware>[0][];
 }
 
-const join = (...str: string[]) => str.join("/").replace(/\/\//g, "/");
-
 export default async ({
   database: db,
   prefix,
   apiMiddleware,
   frontMiddleware,
+  getIpData,
 }: AnalyticsOptions): Promise<Routes> => {
   await createRequiredTables(db);
+  const apiLogVisitPlugin = createApiLogVisitPlugin(getIpData);
   const renderPipe = createRenderPipe((vn) =>
     prepass(vn)
       .then(() => vn)
@@ -73,7 +75,6 @@ export default async ({
     middleware(
       ...toArray(isFront ? frontMiddleware : apiMiddleware),
       async (_, ctx) => {
-        console.log(ctx.remoteAddr);
         ctx.state.db = db;
         ctx.state.prefix = prefix;
         const r = await ctx.next().catch(console.error);
@@ -92,8 +93,8 @@ export default async ({
       renderPipe(ApiLogEvent),
     ),
     [ApiLogExit.config.routeOverride!]: withMiddlewares(renderPipe(ApiLogExit)),
-    [ApiLogVisit.config.routeOverride!]: withMiddlewares(
-      renderPipe(ApiLogVisit),
+    [apiLogVisitPlugin.config.routeOverride!]: withMiddlewares(
+      renderPipe(apiLogVisitPlugin),
     ),
     [ApiClientFile.config.routeOverride!]: withMiddlewares(
       renderPipe(ApiClientFile),
