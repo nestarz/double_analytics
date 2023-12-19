@@ -1,4 +1,4 @@
-/** @jsxImportSource https://esm.sh/preact@10.17.1 */
+/** @jsxImportSource https://esm.sh/preact@10.19.3 */
 import type {
   Handlers,
   PageProps,

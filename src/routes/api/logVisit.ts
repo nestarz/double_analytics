@@ -1,7 +1,7 @@
 import columnSafe from "../../utils/columnSafe.ts";
 import type { Handlers } from "https://deno.land/x/fresh@1.6.0/server.ts";
 import type { ContextState } from "../../../mod.ts";
-import { RouteConfig } from "$fresh/server.ts";
+import type { RouteConfig } from "$fresh/server.ts";
 
 type ActiveSessions = { [ip: string]: number };
 

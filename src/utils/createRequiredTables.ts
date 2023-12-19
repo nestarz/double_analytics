@@ -5,7 +5,7 @@ export default async (db: DB) => {
   await db
     .query(
       sql`
-  CREATE TABLE "analytics_visits" (
+  CREATE TABLE IF NOT EXISTS "analytics_visits" (
     id INTEGER DEFAULT (
       CAST(
         ROUND((julianday('now') - 2440587.5) * 86400000) As INTEGER
@@ -35,7 +35,7 @@ export default async (db: DB) => {
   await db
     .query(
       sql`
-  CREATE TABLE "analytics_events" (
+  CREATE TABLE IF NOT EXISTS "analytics_events" (
     id INTEGER DEFAULT (
       CAST(
         ROUND((julianday('now') - 2440587.5) * 86400000) As INTEGER
